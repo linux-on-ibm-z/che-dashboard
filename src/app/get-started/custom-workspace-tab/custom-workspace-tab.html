@@ -17,98 +17,27 @@
   <form class="pf-c-form pf-m-horizontal">
 
     <!-- Infrastructure Namespaces -->
-    <div class="pf-c-form__group">
-      <label class="pf-c-form__label" for="{{customWorkspaceTabController.namespaceSelect.config.id}}">
-        <span class="pf-c-form__label-text">Namespace</span>
-        <span class="pf-c-form__label-required" aria-hidden="true">&#42;</span>
-      </label>
-      <div class="pf-c-form__horizontal-group">
-        <che-pf-select-single config="customWorkspaceTabController.namespaceSelect.config"
-          value="customWorkspaceTabController.namespaceSelect.value"
-          on-select="customWorkspaceTabController.namespaceSelect.onSelect($value)"
-          ng-if="customWorkspaceTabController.namespaceSelect && customWorkspaceTabController.namespaceSelect.config"></che-pf-select-single>
-      </div>
-    </div>
+    <infrastructure-namespace-row on-select="customWorkspaceTabController.infrastructureNamespaceProperties.onSelect()"></infrastructure-namespace-row>
 
     <!-- Workspace Name -->
-    <div class="pf-c-form__group">
-      <label class="pf-c-form__label" for="{{customWorkspaceTabController.workspaceNameInput.config.id}}">
-        <span class="pf-c-form__label-text">Workspace Name</span>
-        <span class="pf-c-form__label-required" aria-hidden="true">&#42;</span>
-      </label>
-      <div class="pf-c-form__horizontal-group">
-        <che-pf-text-input value="customWorkspaceTabController.workspaceNameInput.value"
-          config="customWorkspaceTabController.workspaceNameInput.config"
-          on-change="customWorkspaceTabController.workspaceNameInput.onChange($value)"></che-pf-text-input>
-      </div>
-    </div>
+    <workspace-name-row generate-name="customWorkspaceTabController.workspaceNameProperties.defaultName"
+      name="customWorkspaceTabController.workspaceNameProperties.name"
+      on-change="customWorkspaceTabController.workspaceNameProperties.onChange($name)"></workspace-name-row>
 
     <!-- Temporary Storage -->
-    <div class="pf-c-form__group">
-      <label class="pf-c-form__label" for="{{customWorkspaceTabController.temporaryStorageSwitch.config.id}}">
-        <span class="pf-c-form__label-text">Temporary Storage</span>
-      </label>
-      <div class="pf-c-form__horizontal-group">
-        <che-pf-switch value="customWorkspaceTabController.temporaryStorageSwitch.value"
-          config="customWorkspaceTabController.temporaryStorageSwitch.config"
-          on-change="customWorkspaceTabController.temporaryStorageSwitch.onChange($value)">
-        </che-pf-switch>
-      </div>
-    </div>
+    <temporary-storage-row on-change="customWorkspaceTabController.temporaryStorageProperties.onChange($temporary)"></temporary-storage-row>
+
   </form>
 
   <!-- Devfile -->
-  <form class="pf-c-form custom-workspace-devfile-label">
-    <div class="pf-c-form__group">
-      <label class="pf-c-form__label" for="vertical-align-labels-vertical-form-name">
-        <span class="pf-c-form__label-text">Devfile</span>
-        <span class="pf-c-form__label-required" aria-hidden="true">&#42;</span>
-      </label>
-
-      <p class="pf-c-form__helper-text" id="help-text-simple-form-name-helper" aria-live="polite">Select a devfile from
-        a templates or enter devfile URL</p>
-    </div>
-
-    <div class="pf-l-flex pf-m-column pf-m-row-on-xl custom-workspace-tab-devfile">
-      <!-- Devfiles List -->
-      <div class="pf-l-flex">
-        <div class="pf-l-flex__item">
-          <che-pf-select-typeahead
-            config="customWorkspaceTabController.devfileSelect.config"
-            value="customWorkspaceTabController.devfileSelect.value"
-            on-select="customWorkspaceTabController.devfileSelect.onSelect($value)"
-            ng-if="customWorkspaceTabController.devfileSelect && customWorkspaceTabController.devfileSelect.config"></che-pf-select-typeahead>
-        </div>
-        <div class="pf-l-flex__item">or</div>
-      </div>
-
-      <div class="pf-l-flex pf-m-column pf-m-row-on-md">
-        <!-- Devfile URL -->
-        <div class="pf-l-flex__item">
-          <che-pf-text-input value="customWorkspaceTabController.devfileUrlInput.value"
-            config="customWorkspaceTabController.devfileUrlInput.config"
-            on-change="customWorkspaceTabController.devfileUrlInput.onChange($value)"></che-pf-text-input>
-        </div>
-        <!-- Load Devfile Button -->
-        <div class="pf-l-flex__item">
-          <che-pf-secondary-button
-            title="{{customWorkspaceTabController.devfileLoadButton.title}}"
-            on-click="customWorkspaceTabController.devfileLoadButton.onClick()"
-            ng-disabled="customWorkspaceTabController.devfileLoadButtonDisabled"></che-pf-secondary-button>
-        </div>
-      </div>
-    </div>
-
-  </form>
+  <devfile-select-row on-load="customWorkspaceTabController.devfileSelectProperties.onLoad($devfile, $stackName)"></devfile-select-row>
 
   <!-- Devfile editor will be here -->
+  devfile: {{customWorkspaceTabController.devfile | json}}<br/>
 
   <che-pf-primary-button
-    title="Create & Open"
-    on-click="customWorkspaceTabController.createButton.onClick()"></che-pf-primary-button>
-
-  <che-pf-link-button
-    title="Cancel"
-    on-click="customWorkspaceTabController.createButton.onClick()"></che-pf-link-button>
+    title="{{customWorkspaceTabController.createButton.title}}"
+    on-click="customWorkspaceTabController.createButton.onClick()"
+    ng-disabled="customWorkspaceTabController.createButtonDisabled"></che-pf-primary-button>
 
 </che-pf-page-main-section>

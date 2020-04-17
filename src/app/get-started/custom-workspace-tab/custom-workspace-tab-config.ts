@@ -13,10 +13,18 @@
 
 import { CustomWorkspaceTabController } from './custom-workspace-tab.controller';
 import { CustomWorkspaceTabDirective } from './custom-workspace-tab.directive';
+import { DevfileSelectRowComponent } from './devfile-select-row/devfile-select-row.component';
+import { InfrastructureNamespaceRowComponent } from './infrastructure-namespace-row/infrastructure-namespace-row.component';
+import { TemporaryStorageRowComponent } from './temporary-storage-row/temporary-storage-row.component';
+import { WorkspaceNameRowComponent } from './workspace-name-row/workspace-name-row.component';
 
 export class CustomWorkspaceTabConfig {
 
   constructor(register: che.IRegisterService) {
+    register.component('devfileSelectRow', DevfileSelectRowComponent);
+    register.component('infrastructureNamespaceRow', InfrastructureNamespaceRowComponent);
+    register.component('temporaryStorageRow', TemporaryStorageRowComponent);
+    register.component('workspaceNameRow', WorkspaceNameRowComponent);
     register.controller('CustomWorkspaceTabController', CustomWorkspaceTabController);
     register.directive('customWorkspaceTab', CustomWorkspaceTabDirective);
   }
