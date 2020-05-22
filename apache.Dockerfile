@@ -13,7 +13,10 @@ FROM docker.io/node:8.16.2 as builder
 COPY package.json /dashboard/
 COPY yarn.lock /dashboard/
 WORKDIR /dashboard
-RUN yarn install --ignore-optional
+RUN if [ "$(uname -m)" = "s390x" ]; then export QT_QPA_PLATFORM=offscreen; \ 
+    apt-get update; \
+    apt-get install -y phantomjs; fi \
+    && yarn install --ignore-optional
 COPY . /dashboard/
 RUN yarn build && yarn test
 
