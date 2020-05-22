@@ -15,6 +15,7 @@
 var path = require('path');
 var gulp = require('gulp');
 var conf = require('./conf');
+var os = require('os');
 
 var karma = require('karma');
 
@@ -57,9 +58,20 @@ function runTests (singleRun, done) {
 }
 
 gulp.task('test', ['scripts:test'], function(done) {
-  runTests(true, done);
+  if (checkArch()){
+    runTests(true, done);
+  }
 });
 
 gulp.task('test:auto', ['scripts:test-watch'], function(done) {
-  runTests(false, done);
+  if (checkArch()){
+    runTests(false, done);
+  }
 });
+
+function checkArch () {
+  if (os.arch() != "s390x")
+    return true;
+  else 
+    return false;
+}
