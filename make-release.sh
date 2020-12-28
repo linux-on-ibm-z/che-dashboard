@@ -108,8 +108,7 @@ fi
 if [[ $TRIGGER_RELEASE -eq 1 ]]; then	
   # push new branch to release branch to trigger CI build	
   git checkout "${BRANCH}"	
-  docker build -t "${QUAY_REPO}" -f apache.Dockerfile .	
-  docker push "${QUAY_REPO}"	
+  docker buildx build --platform linux/amd64,linux/s390x -t "${QUAY_REPO}" -f apache.Dockerfile  --push .
 
   # tag the release	
   git checkout "${BRANCH}"	
