@@ -13,14 +13,16 @@
 # and and trigger release by force pushing changes to the release branch 	
 
 # set to 1 to actually trigger changes in the release branch	
-TRIGGER_RELEASE=0 	
+TRIGGER_BUILD=0 	
 NOCOMMIT=0	
+TAG_RELEASE=0
 
 while [[ "$#" -gt 0 ]]; do	
   case $1 in	
-    '-t'|'--trigger-release') TRIGGER_RELEASE=1; NOCOMMIT=0; shift 0;;	
+    '-t'|'--trigger-build') TRIGGER_BUILD=1; NOCOMMIT=0; shift 0;;	
     '-v'|'--version') VERSION="$2"; shift 1;;	
-    '-n'|'--no-commit') NOCOMMIT=1; TRIGGER_RELEASE=0; shift 0;;	
+    '-n'|'--no-commit') NOCOMMIT=1; TRIGGER_BUILD=0; shift 0;;	
+    '-r'|'--tag-release') TAG_RELEASE=1; shift 0;;
   esac	
   shift 1	
 done	
@@ -105,15 +107,18 @@ if [[ ${NOCOMMIT} -eq 0 ]]; then
   git push origin "${BRANCH}"	
 fi	
 
-if [[ $TRIGGER_RELEASE -eq 1 ]]; then	
-  # push new branch to release branch to trigger CI build	
-  git checkout "${BRANCH}"	
-  docker buildx build --platform linux/amd64,linux/s390x -t "${QUAY_REPO}" -f apache.Dockerfile  --push .
+if [[ $TRIGGER_BUILD -eq 1 ]]; then
+  git checkout "${BRANCH}"
+  docker build -t "${QUAY_REPO}" -f apache.Dockerfile .
+  docker push "${QUAY_REPO}"
+fi
 
+if [[ $TAG_RELEASE -eq 1 ]]; then	
+  # push new branch to release branch to trigger CI build	
   # tag the release	
-  git checkout "${BRANCH}"	
-  git tag "${VERSION}"	
-  git push origin "${VERSION}"	
+  git checkout "${BRANCH}"
+  git tag "${VERSION}"
+  git push origin "${VERSION}"
 fi	
 
 # now update ${BASEBRANCH} to the new snapshot version	
