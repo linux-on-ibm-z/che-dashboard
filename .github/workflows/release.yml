@@ -7,32 +7,119 @@ on:
         description: 'The version that is going to be released. Should be in format 7.y.z'
         required: true
         default: '7.y.z'
+
+env:
+  IMAGE: quay.io/eclipse/che-dashboard
+
 jobs:
-  build:
-    name: Create Release
-    runs-on: ubuntu-latest
+
+  build-images:
+    runs-on: ubuntu-18.04
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64,arm64,ppc64le,s390x]
+    outputs:
+      amd64: ${{ steps.result.outputs.amd64 }}
+      arm64: ${{ steps.result.outputs.arm64 }}
+      ppc64le: ${{ steps.result.outputs.ppc64le }}
+      s390x: ${{ steps.result.outputs.s390x }}
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-      - name: Set up QEMU
+      -
+        name: "Checkout Che Dashboard source code"
+        uses: actions/checkout@v2
+      -
+        name: "Set up QEMU"
         uses: docker/setup-qemu-action@v1
-      - name: Login to docker.io
+      -
+        name: "Set up Docker Buildx ${{ matrix.arch }}"
+        uses: docker/setup-buildx-action@v1
+      -
+        name: "Docker quay.io Login"
         uses: docker/login-action@v1
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          registry: docker.io
-      - name: Login to quay.io
-        uses: docker/login-action@v1
-        with:
+          registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
+      -
+        name: "Docker docker.io Login"
+        uses: docker/login-action@v1
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      -
+        name: "Build and push ${{ matrix.arch }}"
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./apache.Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          push: true
+          tags: ${{ env.IMAGE }}:${{ github.event.inputs.version }}-${{ matrix.arch }}
+      -
+        id: result
+        name: "Build result outputs version"
+        if: ${{ success() }}
+        run: echo "::set-output name=${{ matrix.arch }}::${{ github.event.inputs.version }}-${{ matrix.arch }}"
+
+  create-manifest:
+    if: always()
+    needs: build-images
+    runs-on: ubuntu-18.04
+    steps:
+      -
+        name: "Docker quay.io Login"
+        uses: docker/login-action@v1
+        with:
           registry: quay.io
-      - name: Create Release
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      -
+        name: "Create and push manifest"
+        run: |
+          AMEND=""
+          AMD64_VERSION="${{ needs['build-images'].outputs.amd64 }}"
+          if [ -n "$AMD64_VERSION" ]; then
+            AMEND+=" --amend ${{ env.IMAGE }}:$AMD64_VERSION";
+          fi
+          ARM64_VERSION="${{ needs['build-images'].outputs.arm64 }}"
+          if [ -n "$ARM64_VERSION" ]; then
+            AMEND+=" --amend ${{ env.IMAGE }}:$ARM64_VERSION";
+          fi
+          PPC64LE_VERSION="${{ needs['build-images'].outputs.ppc64le }}"
+          if [ -n "$PPC64LE_VERSION" ]; then
+            AMEND+=" --amend ${{ env.IMAGE }}:$PPC64LE_VERSION";
+          fi
+          S390X_VERSION="${{ needs['build-images'].outputs.s390x }}"
+          if [ -n "$S390X_VERSION" ]; then
+            AMEND+=" --amend ${{ env.IMAGE }}:$S390X_VERSION";
+          fi
+          if [ -z "$AMEND" ]; then
+            echo "[!] The job 'build-images' didn't provide any outputs. Can't create the manifest list."
+            exit 1;
+          fi
+          docker manifest create ${{ env.IMAGE }}:${{ github.event.inputs.version }} $AMEND
+          docker manifest push ${{ env.IMAGE }}:${{ github.event.inputs.version }}
+      -
+        id: result
+        name: "Manifest result"
+        if: ${{ success() }}
+        run: echo "Manifest was created and pushed successfully"
+
+  create-release:
+    if: always()
+    needs: create-manifest
+    runs-on: ubuntu-18.04
+    steps:
+      -
+        name: "Checkout Che Dashboard source code"
+        uses: actions/checkout@v2
+      -
+        name: "Create release"
         run: |
           git config --global user.name "Mykhailo Kuznietsov"
           git config --global user.email "mkuznets@redhat.com"
           export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
-          /bin/bash make-release.sh --version ${{ github.event.inputs.version }} --trigger-release
+          /bin/bash make-release.sh --version ${{ github.event.inputs.version }} --tag-release
